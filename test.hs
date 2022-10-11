@@ -40,3 +40,9 @@ module Test where
   -}
 
   --Haskell can solve complex math questions
+
+  removeNonUppercase :: [Char] -> [Char]   
+  removeNonUppercase st = [ c | c <- st, c `elem` ['A'..'Z']]
+
+  --let in
+  

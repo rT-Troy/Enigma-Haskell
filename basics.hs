@@ -35,7 +35,7 @@ module Basics where
     --take, drop --could be 0 so []
       --with cycle and repeat
 
-    --elem if it exit in xs
+    -- `elem` if it exit in xs
 
       
 
