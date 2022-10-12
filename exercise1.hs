@@ -63,3 +63,5 @@ module Exercise1 where
     
   weighted mark = fst mark * fromIntegral (snd mark)
   --don't really understand the meaning
+
+  
