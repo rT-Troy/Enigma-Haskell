@@ -40,9 +40,25 @@ module Test where
   -}
 
   --Haskell can solve complex math questions
+  triangle = [(x,y,z) | x<-[1..10],y<-[1..10],z<-[1..10],x^2 == y^2 + z^2,x>y,y>z]
 
   removeNonUppercase :: [Char] -> [Char]   
   removeNonUppercase st = [ c | c <- st, c `elem` ['A'..'Z']]
 
   --let in
+
+  capital1 :: String -> String  
+  capital1 " " = "Empty string, whoops!"
+  capital1 (x:xs) = "The first letter of " ++ xs ++ " is " ++ [x]  --xs has been removed the first letter
   
+  capital2 :: String -> String  
+  capital2 " " = "Empty string, whoops!"
+  capital2 all@(x:xs) = "The first letter of " ++ all ++ " is " ++ [x]  
+
+  maximum' :: (Ord a) => [a] -> a   
+  maximum' [] = error "maximum of empty list"   
+  maximum' [x] = x   
+  maximum' (x:xs)    
+    | x > maxTail = x   
+    | otherwise = maxTail   
+    where maxTail = maximum' xs
