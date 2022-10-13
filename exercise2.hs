@@ -33,3 +33,20 @@ module Exercise2 where
   roots (a,b,c) = (x1,x2)
     where x1 = (-b+sqrt (b^2-4*a*c))/2*a
           x2 = (-b-sqrt (b^2-4*a*c))/2*a
+  --q7
+  rewrite = map (2*) (filter even [1..20])
+
+  --q8
+
+  --q9
+  --ghci> (\n -> n+1) 5
+  --ghci> (\n -> n-1) 5
+  --ghci> (\n -> [n%x == 0| x<- [2..n]])   --not work
+
+
+  --q9
+  luhnDouble :: Int -> Int
+  luhnDouble n 
+    | 2*n > 9 = 2*n-9
+    | otherwise = 2*n
+
