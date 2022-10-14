@@ -44,9 +44,43 @@ module Exercise2 where
   --ghci> (\n -> [n%x == 0| x<- [2..n]])   --not work
 
 
-  --q9
+  --q10.1  
   luhnDouble :: Int -> Int
   luhnDouble n 
     | 2*n > 9 = 2*n-9
     | otherwise = 2*n
+  
+  --q10.2 --don't really understand the meaning of part 2
 
+  --q11
+
+  length' :: [a] -> Int
+  length' [] = 0
+  length' (x:xs) = 1 + length xs
+
+  --that's wasted
+
+  --q12
+  {-
+  --euclid a b = 
+
+  --maxConve n = filter True haveMaxCon
+  pairs boo xs = zip haveMaxCon xs where xs = [0..20]
+  haveMaxCon n = [n`mod`xs == 0 | xs <- [(n-1)..1]]
+  -}
+
+  --q13
+  --p a
+  sum' [] = 0
+  sum' (x:xs) = x + (sum' xs)
+  --reminder!!: when do the recursion, it's important to make sure non-exhaustive patterns happended like remember [] case.
+  --p b  --s:start --h:how much
+  
+  take' xs s h = take h (drop s xs)
+
+  --p c
+  
+  last' xs = 
+
+
+  
