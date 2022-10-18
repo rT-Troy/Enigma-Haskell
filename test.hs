@@ -62,3 +62,16 @@ module Test where
     | x > maxTail = x   
     | otherwise = maxTail   
     where maxTail = maximum' xs
+
+
+  replace :: String -> String -> String -> String
+  replace orig new [] = []
+  replace orig new (x:xs)
+    | orig == prefix = new ++ replace orig new rest
+    | otherwise = x : replace orig new xs
+    where (prefix,rest) = splitAt (length orig) (x:xs)
+
+
+  primes' :: [Int]
+  primes' = sieve [2..100]
+    where sieve (p:xs) = p : sieve [ n | n <- xs, n `mod` p > 0 ]
