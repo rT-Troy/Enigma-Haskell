@@ -72,3 +72,9 @@ uncurry' :: (t1 -> t2 -> t3) -> (t1, t2) -> t3
 uncurry' f (x, y) = f x y
 
 --q8
+altMap :: (a->b) -> (a->b) -> [a] -> [b]
+altMap f g [] = []
+altMap f g (x:xs) = f x : altMap g f xs
+
+--q9
+-- combine with exercise 2
