@@ -91,6 +91,7 @@ avlInsert v t@(Node left root right)
 foldAVLTree :: Ord a => [a] -> Tree a
 foldAVLTree = foldr avlInsert Empty
 
+--balanced tree :difference between the left and the right subtree for any node is not more than one
 balanced :: (Ord a) => Tree a -> Bool
 balanced Empty = True
 balanced  (Node l root r)
