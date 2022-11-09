@@ -10,7 +10,7 @@ module Enigma where
 
 {- Part 1: Simulation of the Enigma -}
 
-  type Rotor = Bool -- the supplied type is not correct; fix it!
+  type Rotor = ([Char],Int)
   type Reflector = Bool -- the supplied type is not correct; fix it!
   type Offsets = Bool -- the supplied type is not correct; fix it!
   type Stecker = Bool -- the supplied type is not correct; fix it!
@@ -25,8 +25,8 @@ module Enigma where
    - and keep it simple! If things are feeling complicated, step back from your
    - code and think about the design again.
    -}
-
-
+  
+  
 {- Part 2: Finding the Longest Menu -}
 
   type Menu = Bool -- the supplied type is not correct; fix it!
@@ -77,3 +77,8 @@ module Enigma where
    -}
   alphaPos :: Char -> Int
   alphaPos c = (ord c) - ord 'A'
+
+  {-makesure uppercase letter input, cannot change non-alphabetic character-}
+  normalize :: [Char] -> [Char]
+  normalize [] = []
+  normalize (x:xs) = (toUpper x):normalize xs
