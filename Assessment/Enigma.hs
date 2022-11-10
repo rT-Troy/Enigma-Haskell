@@ -25,7 +25,31 @@ module Enigma where
    - and keep it simple! If things are feeling complicated, step back from your
    - code and think about the design again.
    -}
+
+
+  {- offset value -}
+  offset :: Rotor -> Rotor
+  offset rotor = (tail(rotorStr rotor) ++ [head(rotorStr rotor)], snd(rotor))
+  -- > offset ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
+  -- > offset (offset ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int))
   
+  {- encode char to char  by a rotor-}
+  encode :: Char -> Rotor -> Char
+  encode c rotor = head(drop m (rotorStr rotor))
+    where m = alphaPos c
+  -- > encode 'A' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
+  -- > encode 'Z' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
+
+  {- encode String to String by a rotor -}
+  encodeStr :: [Char] -> Rotor -> [Char]
+  encodeStr [] rotor= []
+  encodeStr (x:xs) rotor = (encode x rotor):(encodeStr xs rotor) 
+  -- > encodeStr "ABCDE" ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
+  -- > encodeStr "AAZAZ" ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
+
+
+  rotorStr :: Rotor -> [Char]
+  rotorStr rotor = fst(rotor)
   
 {- Part 2: Finding the Longest Menu -}
 
