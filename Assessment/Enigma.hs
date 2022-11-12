@@ -10,46 +10,93 @@ module Enigma where
 
 {- Part 1: Simulation of the Enigma -}
 
-  type Rotor = ([Char],Int)
-  type Reflector = Bool -- the supplied type is not correct; fix it!
-  type Offsets = Bool -- the supplied type is not correct; fix it!
+  type Rotor = (String,Int)
+  type Reflector = [(Char,Char)] -- the supplied type is not correct; fix it!
+  type Offsets = (Int,Int,Int) -- the supplied type is not correct; fix it!
   type Stecker = Bool -- the supplied type is not correct; fix it!
   
   data Enigma = SimpleEnigma Rotor Rotor Rotor Reflector Offsets
                 | SteckeredEnigma Rotor Rotor Rotor Reflector Offsets Stecker
 
   encodeMessage :: String -> Enigma -> String
-  encodeMessage _ _ = "" -- you need to complete this!
+  encodeMessage xs (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25)) = encodeStr (encodeStr (encodeStr xs rotor1) rotor2) rotor3 -- you need to complete this!
 
   {- You will need to add many more functions. Remember, design it carefully
    - and keep it simple! If things are feeling complicated, step back from your
    - code and think about the design again.
    -}
 
+  {- Test -}
 
-  {- offset value -}
+
+
+  int2let :: Int -> Char
+  int2let n = chr (ord 'A' + n)
+
+  {- makesure only uppercase letter input -}
+  normalize :: String -> String
+  normalize [] = []
+  normalize (x:xs) 
+    | isUpper x = (toUpper x):normalize xs
+    | otherwise = normalize xs
+  -- > normalize "STdife@o12,"
+
+  {- offset 1 step for one input -}
   offset :: Rotor -> Rotor
   offset rotor = (tail(rotorStr rotor) ++ [head(rotorStr rotor)], snd(rotor))
   -- > offset ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
   -- > offset (offset ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int))
+
+
+  offsets :: [Int] -> [Int]
+  offsets [x,y,z]
+    | isDividable (y+1) && isDividable (z+1) = [x+1,0,0]
+    | isDividable (z+1) = [x,y+1,0]
+    | otherwise = [x,y,z+1]
+
+  -- > offsets [0,25,25]
+  -- > offsets [0,0,26]
+
+  reflector :: Char -> [(Char,Char)] -> Char
+  reflector c [] = c
+  reflector c (x:xs) 
+    | fst x == c = snd x
+    | snd x == c = fst x
+    | otherwise = reflector c xs
+  -- > reflector 'T' reflectorB
+
+  {- set initial state of rotor -}
+  initRotor :: Rotor -> Rotor
+  initRotor rotor = ((drop (rotorInt rotor) (rotorStr rotor)) ++ (take (rotorInt rotor) (rotorStr rotor)),snd(rotor))
+  -- > startRotor ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
+
+  isDividable :: Int -> Bool
+  isDividable n = (n `div` 26) >= 1
   
-  {- encode char to char  by a rotor-}
+  {- encode char to char  by a rotor -}
   encode :: Char -> Rotor -> Char
   encode c rotor = head(drop m (rotorStr rotor))
     where m = alphaPos c
   -- > encode 'A' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
   -- > encode 'Z' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
 
+  charToString :: Char -> String
+  charToString c = [c]
+
   {- encode String to String by a rotor -}
-  encodeStr :: [Char] -> Rotor -> [Char]
+  encodeStr :: String -> Rotor -> String
   encodeStr [] rotor= []
-  encodeStr (x:xs) rotor = (encode x rotor):(encodeStr xs rotor) 
+  encodeStr (x:xs) rotor = (encode x rotor):(encodeStr xs (offset rotor))
   -- > encodeStr "ABCDE" ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
   -- > encodeStr "AAZAZ" ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
 
-
-  rotorStr :: Rotor -> [Char]
+  {- get rotor wirings -}
+  rotorStr :: Rotor -> String
   rotorStr rotor = fst(rotor)
+
+  {- get rotor knock-on position -}
+  rotorInt :: Rotor -> Int
+  rotorInt rotor = snd(rotor)
   
 {- Part 2: Finding the Longest Menu -}
 
@@ -102,7 +149,3 @@ module Enigma where
   alphaPos :: Char -> Int
   alphaPos c = (ord c) - ord 'A'
 
-  {-makesure uppercase letter input, cannot change non-alphabetic character-}
-  normalize :: [Char] -> [Char]
-  normalize [] = []
-  normalize (x:xs) = (toUpper x):normalize xs
