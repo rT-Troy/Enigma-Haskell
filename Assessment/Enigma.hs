@@ -47,15 +47,20 @@ module Enigma where
   -- > offset ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
   -- > offset (offset ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int))
 
+  moveStep :: [Int] -> [Int]
+  moveStep [x,y,z] = map (`rem` 26) [x,y,z+1]
+  -- > moveStep [0,25,25]
+  -- > moveStep [0,24,25]
 
-  offsets :: [Int] -> [Int]
-  offsets [x,y,z]
-    | isDividable (y+1) && isDividable (z+1) = [x+1,0,0]
-    | isDividable (z+1) = [x,y+1,0]
-    | otherwise = [x,y,z+1]
+  {- offsets of next step according to knock-on position -}
+  moveMatch :: [Int] -> Rotor -> Rotor -> Rotor -> [Int]
+  moveMatch [x,y,z] rotorL rotorM rotorR
+    | y == rotorInt rotorM && rotorInt rotorR == (z-1) = [x+1,y+1,z]
+    | rotorInt rotorR == (z-1) = [x,y+1,z]
+    | otherwise = [x,y,z]
+  -- > moveMatch (moveStep [0,0,17]) rotor3 rotor2 rotor1
+  -- > moveMatch (moveStep [0,5,17]) rotor3 rotor2 rotor1
 
-  -- > offsets [0,25,25]
-  -- > offsets [0,0,26]
 
   reflector :: Char -> [(Char,Char)] -> Char
   reflector c [] = c
