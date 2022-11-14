@@ -12,9 +12,9 @@ module Enigma where
 {- Part 1: Simulation of the Enigma -}
 
   type Rotor = (String,Int)
-  type Reflector = [(Char,Char)] -- the supplied type is not correct; fix it!
-  type Offsets = (Int,Int,Int) -- the supplied type is not correct; fix it!
-  type Stecker = Bool -- the supplied type is not correct; fix it!
+  type Reflector = [(Char,Char)]
+  type Offsets = (Int,Int,Int)
+  type Stecker = [(Char,Char)]
   
   data Enigma = SimpleEnigma Rotor Rotor Rotor Reflector Offsets
                 | SteckeredEnigma Rotor Rotor Rotor Reflector Offsets Stecker
@@ -23,9 +23,15 @@ module Enigma where
   encodeMessage :: String -> Enigma -> String
   encodeMessage xs (SimpleEnigma rotorR rotorM rotorL reflectorB offsets) =
     encodeMessage' (normalize xs) (SimpleEnigma rotorR rotorM rotorL reflectorB offsets)
+
+  encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets steckers) =
+    encodeMessage' (normalize xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets steckers)
   -- > encodeMessage "%AAAAAAAAA" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > encodeMessage "Here is a test input string." (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
+  -- > encodeMessage "Here is a test input string." (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z'),('I','X')])
 
+  -- > encodeMessage "AAAAAAAAAA" (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z')])
+  -- > encodeMessage "AAAAAAAAAA" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   --encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets stecker) = "null"
   -- > "AAAAAAA" -> "GVURPWX"
   -- > "AA" -> "NE"
@@ -35,6 +41,11 @@ module Enigma where
   encodeMessage' [] _ = []
   encodeMessage' (x:xs) (SimpleEnigma rotorR rotorM rotorL reflectorB offsets) = 
     [encode'(encode' (encode' (reflector (encode (encode (encode x rotorR) rotorM) rotorL) reflectorB) rotorL) rotorM) rotorR] ++ encodeMessage xs (SimpleEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB nextOffsets)
+      where nextOffsets = moveMatch (moveStep (if offsets /= (0,0,25) then offsets else moveStep offsets)) rotorR rotorM rotorL
+            nextRotorList = cur3Rotor offsets nextOffsets rotorR rotorM rotorL
+  
+  encodeMessage' (x:xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets steckers) = 
+    [steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode x rotorR) rotorM) rotorL) reflectorB) rotorL) rotorM) rotorR) steckers]  ++ encodeMessage xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB nextOffsets steckers)
       where nextOffsets = moveMatch (moveStep (if offsets /= (0,0,25) then offsets else moveStep offsets)) rotorR rotorM rotorL
             nextRotorList = cur3Rotor offsets nextOffsets rotorR rotorM rotorL
 
@@ -77,13 +88,22 @@ module Enigma where
   -- > cur3Rotor (2,1,25) (2,1,0) rotor1 rotor2 rotor3
   -- > cur3Rotor (2,1,0) (2,1,1) rotor1 rotor2 rotor3
 
-  reflector :: Char -> [(Char,Char)] -> Char
-  reflector c [] = c
+  reflector :: Char -> Reflector -> Char
   reflector c (x:xs) 
     | fst x == c = snd x
     | snd x == c = fst x
     | otherwise = reflector c xs
   -- > reflector 'T' reflectorB
+
+  {- if not found in stecker, equals itself -}
+  steckerMatch :: Char -> Stecker -> Char
+  steckerMatch c (x:xs)
+    | fst x == c = snd x
+    | snd x == c = fst x
+    | otherwise = steckerMatch c xs
+  steckerMatch c [] = c
+  -- > steckerMatch 'A' [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z'),('I','X')]
+  -- > steckerMatch 'C' [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z'),('I','X')]
 
   {- encode from RR -> MR -> LR -> reflector -}
   encode :: Char -> Rotor -> Char
