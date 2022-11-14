@@ -24,9 +24,9 @@ module Enigma where
   encodeMessage xs (SimpleEnigma rotorR rotorM rotorL reflectorB offsets) =
     encodeMessage' (normalize xs) (SimpleEnigma rotorR rotorM rotorL reflectorB offsets)
   -- > encodeMessage "%AAAAAAAAA" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
-  -- > encodeMessage "AAAAAAAAAA" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
+  -- > encodeMessage "Here is a test input string." (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
 
-  encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets stecker) = "null"
+  --encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets stecker) = "null"
   -- > "AAAAAAA" -> "GVURPWX"
   -- > "AA" -> "NE"
 
@@ -45,7 +45,8 @@ module Enigma where
   normalize :: String -> String
   normalize [] = []
   normalize (x:xs) 
-    | isUpper x = (toUpper x):normalize xs
+    | isUpper x = x:(normalize xs)
+    | isLower x = (toUpper x):(normalize xs)
     | otherwise = normalize xs
   -- > normalize "STdife@o12,"
 
