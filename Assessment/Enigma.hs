@@ -118,11 +118,23 @@ module Enigma where
 
 {- Part 2: Finding the Longest Menu -}
 
-  type Menu = Bool -- the supplied type is not correct; fix it!
-  type Crib = Bool -- the supplied type is not correct; fix it!
+  crib1 = "WETTERVORHERSAGEBISKAYA"
+  message1 = "RWIVTYRESXBFOGKUHQBAISE"
+
+  type Menu = [Int] -- the supplied type is not correct; fix it!
+  type Crib = [(Char,Char)] -- the supplied type is not correct; fix it!
 
   longestMenu :: Crib -> Menu
-  longestMenu _ = False
+  longestMenu all@(x:xs) = searchCipher(fst x all)
+
+  searchCipher :: Char -> [(Char,Char)] -> Char
+  searchCipher c (x:xs) = 
+
+  minLength :: String -> String -> Int
+  minLength plain cipher = min (length plain) (length cipher)
+
+
+
 
 {- Part 3: Simulating the Bombe -}
   
