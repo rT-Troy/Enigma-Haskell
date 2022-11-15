@@ -127,10 +127,9 @@ module Enigma where
   --longestMenu :: Crib -> Menu
   --longestMenu all@(x:xs) = search (snd x) all
 
-  searchRoute:: Crib -> Crib -> [String]
-  searchRoute [] _ = []
+  searchRoute:: [(Char,Char)] -> Crib -> [String]
   searchRoute (x:xs) crib = zip' [fst x] (cipherChar (last[snd x]) crib)
-  -- > searchRoute (zip crib1 message1) (zip crib1 message1)
+  -- > searchRoute [('W','R')] (zip crib1 message1)
 
 
   {- input a cipher Char and return the match plain position -}
