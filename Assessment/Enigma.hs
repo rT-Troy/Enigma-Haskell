@@ -124,11 +124,46 @@ module Enigma where
   type Menu = [Int] -- the supplied type is not correct; fix it!
   type Crib = [(Char,Char)] -- the supplied type is not correct; fix it!
 
-  longestMenu :: Crib -> Menu
-  longestMenu all@(x:xs) = searchCipher(fst x all)
+  --longestMenu :: Crib -> Menu
+  --longestMenu all@(x:xs) = search (snd x) all
 
-  searchCipher :: Char -> [(Char,Char)] -> Char
-  searchCipher c (x:xs) = 
+  searchRoute:: Crib -> Crib -> [String]
+  searchRoute [] _ = []
+  searchRoute (x:xs) crib = zip' [fst x] (cipherChar (last[snd x]) crib)
+  -- > searchRoute (zip crib1 message1) (zip crib1 message1)
+
+
+  {- input a cipher Char and return the match plain position -}
+  cipherChar :: Char -> Crib -> [Char]
+  cipherChar c [] = []
+  cipherChar c (x:xs)
+    | c == fst x = snd x:cipherChar c xs
+    | otherwise = cipherChar c xs
+  -- > cipherChar 'R' (zip crib1 message1)
+
+  {- combine the route -}
+  zip' :: [Char] -> [Char] ->[String]
+  zip' _ [] = []
+  zip' ori (x:xs) = (ori ++ [x]) : zip' ori xs
+  -- > zip' "ABC" "QWERT"
+  -- > zip' "W" (cipherChar 'R' (zip crib1 message1))
+
+  getLast :: [String] -> [Char]
+  getLast [] = []
+  getLast (x:xs) = [last x] ++ getLast xs
+
+
+  {- input a cipher Char and return the match plain position -}
+  searchPos :: Char -> Crib -> (Char,[Int])
+  searchPos c crib = (c,elemIndices c (map fst crib))
+  -- > searchPos 'R' (zip crib1 message1)
+
+
+
+
+
+  --searchCipher :: Char -> [(Char,Char)] -> Char
+  --searchCipher c (x:xs) = 
 
   minLength :: String -> String -> Int
   minLength plain cipher = min (length plain) (length cipher)
