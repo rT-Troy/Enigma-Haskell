@@ -127,15 +127,83 @@ module Enigma where
   --longestMenu :: Crib -> Menu
   --longestMenu all@(x:xs) = search (snd x) all
 
+  combine :: [Int] -> [Int] -> [[Int]]
+  combine ori [] = []
+  combine ori (x:xs) = [ori++[x]] ++ combine ori xs
+  -- > combine [0,2] [5,8,11]
+  -- [[0,2,5],[0,2,8],[0,2,11]]
 
-  searchRoute :: Crib -> Crib -> [String]
-  searchRoute (f,s) crib = searchNext 
 
-  searchNext :: [(Char,Char)] -> Crib -> [String]
-  searchNext [] _ = []
-  searchNext (x:xs) crib = zip' [fst x] (cipherChar (last[snd x]) crib) ++ searchRoute xs crib
+  searchPos' :: Int -> Crib -> [Int]
+  searchPos' i crib = elemIndices num (map fst crib)
+    where num = head(drop i (map snd crib))
+  -- > searchPos' 0 (zip crib1 message1)
+  -- [5,8,11]
+
+  eachSearch :: [[Int]] -> Crib -> [[Int]]
+  eachSearch [] crib = []
+  eachSearch (x:xs) crib = appeared (last x) (combine x (searchPos' (last x) crib)) ++ eachSearch (xs++(combine [last x] (searchPos' (head x) crib))) crib
+  -- > eachSearch [[0]] (zip crib1 message1)
+  -- > eachSearch [[0,5],[0,8],[0,11]] (zip crib1 message1)
+  -- > eachSearch [[0,8],[0,11],[0,5,21]] (zip crib1 message1)
+  -- > eachSearch [[0,11],[0,5,21],[0,8,12],[0,8,18]] (zip crib1 message1)
+  -- > eachSearch [[0,5,21],[0,8,12],[0,8,18]] (zip crib1 message1)
+  -- > eachSearch [[0,8,12],[0,8,18],[0,5,21,12],[0,5,21,18]] (zip crib1 message1)
+  -- > eachSearch [[0,8,18],[0,5,21,12],[0,5,21,18],[0,8,12,7]] (zip crib1 message1)
+  -- > eachSearch [[0,5,21,12],[0,5,21,18],[0,8,12,7],[0,8,18,16]] (zip crib1 message1)
+  -- > eachSearch [[0,5,21,18],[0,8,12,7],[0,8,18,16],[0,5,21,12,7]] (zip crib1 message1)
+  -- > eachSearch [[0,8,12,7],[0,8,18,16],[0,5,21,12,7],[0,5,21,18,16]] (zip crib1 message1)
+  -- > eachSearch [[0,8,18,16],[0,5,21,12,7],[0,5,21,18,16],[0,8,12,7,1],[0,8,12,7,4],[0,8,12,7,10],[0,8,12,7,15]] (zip crib1 message1)
+  
+
+
+  --verify :: [[Int]] -> [[Int]]
+  --verify (x:xs)
+  --  | [last x] == 
+
+  --appeared :: Int -> [[Int]] -> Bool
+  --appeared i xs = elem True [True| x<- xs, elem i x ]
+
+  appeared :: Int -> [[Int]] -> [[Int]]
+  appeared i [] = []
+  appeared i (x:xs)
+    | (null [i]) = appeared i xs
+    | otherwise = x:appeared i xs
+  -- > appeared 5 [[0,5],[0,8],[0,11]]
+  -- > appeared 5 [[0,5,4],[0,8],[0,11]]
+
+  
+  -- > last (head [[0,5],[0,6]])
+
+  -- > searchPos' 0 (zip crib1 message1)
+  -- > snd(searchPos' 1 (zip crib1 message1))
+
+  searchPos :: Char -> Crib -> (Char,[Int])
+  searchPos c crib = (c,elemIndices c (map fst crib))
+  -- > searchPos 'R' (zip crib1 message1)
+  -- ('R',[5,8,11])
+
+  --searchRoute :: Crib -> Crib -> [String] -> [String]
+  --searchRoute (x:xs) crib [] = searchNext [x] crib []
+
+  --searchNext :: [(Char,Char)] -> Crib -> [String] -> [String]
+  --searchNext [] _ _ = []
+  --searchNext (plain,cipher) crib [] = 
+
+  --searchNext x crib str = searchNext ((cribPair (last [snd x]) cipherSin) : xs) crib zipStr  -- ++ searchRoute xs crib
+  --  where cipherSin = cipherChar (last[snd x]) crib
+  --        zipStr = zip' [fst x] cipherSin
   -- > searchNext [('W','R')] (zip crib1 message1)
   -- > searchNext [('Y','S'),('S','O'),('S','B')] (zip crib1 message1)
+
+  {- input a cipher Char and return the match plain position -}
+
+
+  cribPair :: Char -> [Char] -> [(Char,Char)]
+  cribPair c [] = []
+  cribPair c (x:xs) = [(c,x)] ++ cribPair c xs
+  -- > cribPair 'R' "YSF"
+  -- [('R','Y'),('R','S'),('R','F')]
 
 
   {- input a cipher Char and return the match plain position -}
@@ -145,6 +213,7 @@ module Enigma where
     | c == fst x = snd x:cipherChar c xs
     | otherwise = cipherChar c xs
   -- > cipherChar 'R' (zip crib1 message1)
+  -- "YSF"
 
   {- combine the route -}
   zip' :: [Char] -> [Char] ->[String]
@@ -152,18 +221,11 @@ module Enigma where
   zip' ori (x:xs) = (ori ++ [x]) : zip' ori xs
   -- > zip' "ABC" "QWERT"
   -- > zip' "W" (cipherChar 'R' (zip crib1 message1))
+  -- ["WY","WS","WF"]
 
   getLast :: [String] -> [Char]
   getLast [] = []
   getLast (x:xs) = [last x] ++ getLast xs
-
-
-  {- input a cipher Char and return the match plain position -}
-  searchPos :: Char -> Crib -> (Char,[Int])
-  searchPos c crib = (c,elemIndices c (map fst crib))
-  -- > searchPos 'R' (zip crib1 message1)
-
-
 
 
 
