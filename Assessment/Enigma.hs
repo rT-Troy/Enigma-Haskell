@@ -141,12 +141,13 @@ module Enigma where
   -- [5,8,11]
 
   eachSearch :: [[Int]] -> Crib -> [[Int]]
-  eachSearch [] crib = []
-  eachSearch (x:xs) crib = appeared (last x) (combine x (searchPos' (last x) crib)) ++ eachSearch (xs++(combine [last x] (searchPos' (head x) crib))) crib
+  eachSearch [[]] crib = []
+  eachSearch (x:xs) crib = appeared (last x) (combine x (searchPos' (last x) crib))-- ++ eachSearch (xs++(combine [last x] (searchPos' (head x) crib))) crib
   -- > eachSearch [[0]] (zip crib1 message1)
   -- > eachSearch [[0,5],[0,8],[0,11]] (zip crib1 message1)
   -- > eachSearch [[0,8],[0,11],[0,5,21]] (zip crib1 message1)
   -- > eachSearch [[0,11],[0,5,21],[0,8,12],[0,8,18]] (zip crib1 message1)
+  -- > eachSearch [[0,5,21],[0,8,12],[0,8,18],[]] (zip crib1 message1)
   -- > eachSearch [[0,5,21],[0,8,12],[0,8,18]] (zip crib1 message1)
   -- > eachSearch [[0,8,12],[0,8,18],[0,5,21,12],[0,5,21,18]] (zip crib1 message1)
   -- > eachSearch [[0,8,18],[0,5,21,12],[0,5,21,18],[0,8,12,7]] (zip crib1 message1)
