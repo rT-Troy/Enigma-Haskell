@@ -140,9 +140,25 @@ module Enigma where
   -- > searchPos' 0 (zip crib1 message1)
   -- [5,8,11]
 
-  eachSearch :: [[Int]] -> Crib -> [[Int]]
-  eachSearch [[]] crib = []
-  eachSearch (x:xs) crib = appeared (last x) (combine x (searchPos' (last x) crib))-- ++ eachSearch (xs++(combine [last x] (searchPos' (head x) crib))) crib
+  lengthList :: [[Int]] -> [Int]
+  lengthList [] = []
+  lengthList (x:xs)
+    | length (elemIndices (head x) x) /= 1 = [head(tail (elemIndices (head x) x))] ++ lengthList xs
+    | otherwise = lengthList xs
+  --lengthList xs = lengthList --elemIndices (maximum lengthList) lengthList
+  --  where lengthList = [head(tail (elemIndices (head x) x)) - head(elemIndices (head x) x)| x<-xs]
+  -- > lengthList (searchEach [[0]] (zip crib1 message1))
+  -- > lengthList [[0,2,1,0],[1,2,3,4,1]]
+
+  searchEach :: [[Int]] -> Crib -> [[Int]]
+  searchEach all@(x:xs) crib
+    | length (last [x]) == 20 = []
+    | otherwise = (eachSearch x crib) ++ searchEach (xs++eachSearch x crib) crib
+  -- > searchEach [[0]] (zip crib1 message1)
+
+  eachSearch :: [Int] -> Crib -> [[Int]]
+  eachSearch [] crib = []
+  eachSearch x crib = combine x (searchPos' (last x) crib)
   -- > eachSearch [[0]] (zip crib1 message1)
   -- > eachSearch [[0,5],[0,8],[0,11]] (zip crib1 message1)
   -- > eachSearch [[0,8],[0,11],[0,5,21]] (zip crib1 message1)
@@ -157,21 +173,17 @@ module Enigma where
   -- > eachSearch [[0,8,18,16],[0,5,21,12,7],[0,5,21,18,16],[0,8,12,7,1],[0,8,12,7,4],[0,8,12,7,10],[0,8,12,7,15]] (zip crib1 message1)
   
 
-
   --verify :: [[Int]] -> [[Int]]
   --verify (x:xs)
   --  | [last x] == 
 
-  --appeared :: Int -> [[Int]] -> Bool
-  --appeared i xs = elem True [True| x<- xs, elem i x ]
-
   appeared :: Int -> [[Int]] -> [[Int]]
-  appeared i [] = []
-  appeared i (x:xs)
-    | (null [i]) = appeared i xs
-    | otherwise = x:appeared i xs
-  -- > appeared 5 [[0,5],[0,8],[0,11]]
-  -- > appeared 5 [[0,5,4],[0,8],[0,11]]
+  appeared len [] = []
+  appeared len (x:xs)
+    | len > (length x + 1) = appeared len xs
+    | otherwise = [x] ++ appeared len xs
+  -- > appeared 5 [[0,5],[0,8],[0,11],[0,5,21],[0,8,12],[0,8,18],[0,5,21,12],[0,5,21,18],[0,8,12,7],[0,8,18,16],[0,5,21,12,7],[0,5,21,18,16],[0,8,12,7,1],[0,8,12,7,4],[0,8,12,7,10],[0,8,12,7,15]]
+  -- > appeared 5 [[0,5,4],[0,8],[0,11],[0]]
 
   
   -- > last (head [[0,5],[0,6]])
