@@ -22,32 +22,30 @@ module Enigma where
   {- normalize the String first -}
   encodeMessage :: String -> Enigma -> String
   encodeMessage xs (SimpleEnigma rotorR rotorM rotorL reflectorB offsets) =
-    encodeMessage' (normalize xs) (SimpleEnigma rotorR rotorM rotorL reflectorB offsets)
+    encodeMessage' (normalize xs) (SimpleEnigma rotorR rotorM rotorL reflectorB (moveMatch offsets rotorR rotorM rotorL))
 
   encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets steckers) =
-    encodeMessage' (normalize xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets steckers)
-  -- > encodeMessage "%AAAAAAAAA" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
+    encodeMessage' (normalize xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (moveMatch offsets rotorR rotorM rotorL) steckers)
+  -- -- > encodeMessage "%AAAAAAAAA" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > encodeMessage "Here is a test input string." (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > encodeMessage "Here is a test input string." (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z'),('I','X')])
 
   -- > encodeMessage "AAAAAAAAAA" (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z')])
   -- > encodeMessage "AAAAAAAAAA" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   --encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets stecker) = "null"
-  -- > "AAAAAAA" -> "GVURPWX"
+  -- > "NIQVD" -> "ALICE"
   -- > "AA" -> "NE"
 
   {- the encode main function -}
   encodeMessage' :: String -> Enigma -> String
   encodeMessage' [] _ = []
-  encodeMessage' (x:xs) (SimpleEnigma rotorR rotorM rotorL reflectorB offsets) = 
-    encode'(encode' (encode' (reflector (encode (encode (encode x rotorR) rotorM) rotorL) reflectorB) rotorL) rotorM) rotorR : encodeMessage xs (SimpleEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB nextOffsets)
-      where nextOffsets = moveMatch (moveStep (if offsets /= (0,0,25) then offsets else moveStep offsets)) rotorR rotorM rotorL
-            nextRotorList = cur3Rotor offsets nextOffsets rotorR rotorM rotorL
+  encodeMessage' (x:xs) (SimpleEnigma rotorR rotorM rotorL reflectorB (l,m,r)) = 
+    encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r : encodeMessage xs (SimpleEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL))
+      where nextRotorList = cur3Rotor (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
   
-  encodeMessage' (x:xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets steckers) = 
-    steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode x rotorR) rotorM) rotorL) reflectorB) rotorL) rotorM) rotorR) steckers : encodeMessage xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB nextOffsets steckers)
-      where nextOffsets = moveMatch (moveStep (if offsets /= (0,0,25) then offsets else moveStep offsets)) rotorR rotorM rotorL
-            nextRotorList = cur3Rotor offsets nextOffsets rotorR rotorM rotorL
+  encodeMessage' (x:xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (l,m,r) steckers) = 
+   steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r) steckers : encodeMessage xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL) steckers)
+     where nextRotorList = cur3Rotor (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
 
   {- makesure only uppercase letter would be inputed -}
   normalize :: String -> String
@@ -59,45 +57,38 @@ module Enigma where
   -- > normalize "STdife@o12,"
 
   {- encode from RR -> MR -> LR -> reflector -}
-  encode :: Char -> Rotor -> Char
-  encode c rotor = fst rotor !! max 0 m
-    where m = alphaPos c
-  -- > encode 'A' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
-  -- > encode 'Z' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int)
+  encode :: Char -> Rotor -> Int -> Char
+  encode c rotor pos 
+    | index > 0 = (int2let index)
+    | index < 0 = int2let (24-index)
+    | otherwise = 'A'
+      where index = (alphaPos (head(drop (alphaPos c) (fst rotor)))-pos)
+  -- > encode 'G' ("FLGDQVZNTOWYHXUSPAIBRCJEKM",17::Int) 23
 
   {- encode from reflector -> LR -> MR -> RR -}
-  encode' :: Char -> Rotor -> Char
-  encode' c rotor = int2let (head (elemIndices c (fst rotor)))
-  -- > encode' 'L' rotor3
-  -- > encode' 'F' rotor2
-  -- > encode' 'W' rotor1
-
-  moveStep :: (Int,Int,Int) -> (Int,Int,Int)
-  moveStep (x,y,z) = (x `rem` 26,y `rem` 26,(z+1)`rem` 26)
-  -- > moveStep (0,25,25)
-  -- > moveStep (0,24,25)
-
+  encode' :: Char -> Rotor -> Int -> Char
+  encode' c rotor pos = int2let index
+      where index = (head (elemIndices c (fst rotor))+pos)
+  -- > encode' 'E' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int) 0
+  -- > encode' 'J' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int) 0
   {- offsets of next step according to knock-on position -}
   moveMatch :: (Int,Int,Int) -> Rotor -> Rotor -> Rotor -> (Int,Int,Int)
   moveMatch (x,y,z) rotorR rotorM rotorL
-    | y == snd rotorM && snd rotorR == (z-1) = (x+1,y+1,z)
-    | snd rotorR == (z-1) = (x,y+1,z)
-    | otherwise = (x,y,z)
-  -- > moveMatch (moveStep (0,0,25)) rotor3 rotor2 rotor1
-  -- > moveMatch (moveStep (0,0,17)) rotor3 rotor2 rotor1
-  -- > moveMatch (moveStep (0,5,17)) rotor3 rotor2 rotor1
-  -- for machine set up from (0,0,25)
-  -- > moveMatch (moveStep (if (0,0,25) == (0,0,25) then moveStep (0,0,25) else (0,0,25))) rotor3 rotor2 rotor1
-  -- > moveMatch (moveStep (if (0,0,1) == (0,0,25) then moveStep (0,0,1) else (0,0,1))) rotor3 rotor2 rotor1
+    | snd rotorM == y && snd rotorR == z = ((x+1)`rem`26,(y+1)`rem`26,(z+1)`rem`26)
+    | snd rotorM /= y && snd rotorR == z = (x`rem`26,(y+1)`rem`26,(z+1)`rem`26)
+    | otherwise = (x`rem`26,y`rem`26,(z+1)`rem`26)
+  -- > moveMatch (0,0,25) rotor1 rotor2 rotor3
+  -- > moveMatch (0,0,17) rotor1 rotor2 rotor3
+  -- > moveMatch (0,25,17) rotor1 rotor2 rotor3
 
   {- the rotor state changed and stored as list -}
-  cur3Rotor :: (Int,Int,Int) -> (Int,Int,Int) -> Rotor -> Rotor -> Rotor -> [Rotor]
-  cur3Rotor (ix,iy,iz) (x,y,z) rotorR rotorM rotorL =
-    [(drop (z-iz`rem`25) (fst rotorR) ++ take (z-iz`rem`25) (fst rotorR), snd rotorR),
-     (drop (y-iy`rem`25) (fst rotorM) ++ take (y-iy`rem`25) (fst rotorM), snd rotorM),
-     (drop (x-ix`rem`25) (fst rotorL) ++ take (x-ix`rem`25) (fst rotorL), snd rotorL)]
-  -- > cur3Rotor (2,1,25) (2,1,0) rotor1 rotor2 rotor3
-  -- > cur3Rotor (2,1,0) (2,1,1) rotor1 rotor2 rotor3
+  cur3Rotor :: (Int,Int,Int) -> Rotor -> Rotor -> Rotor -> [Rotor]
+  cur3Rotor (x,y,z) rotorR rotorM rotorL =
+    [(drop z (fst rotorR) ++ take z (fst rotorR), snd rotorR),
+     (drop y (fst rotorM) ++ take y (fst rotorM), snd rotorM),
+     (drop x (fst rotorL) ++ take x (fst rotorL), snd rotorL)]
+  -- > cur3Rotor (2,1,0) rotor1 rotor2 rotor3
+  -- > cur3Rotor (2,1,1) rotor1 rotor2 rotor3
 
   reflector :: Char -> Reflector -> Char
   reflector c (x:xs) 
