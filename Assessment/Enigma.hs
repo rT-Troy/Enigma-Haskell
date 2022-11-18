@@ -118,83 +118,85 @@ module Enigma where
 
 {- Part 2: Finding the Longest Menu -}
 
-  crib1 = "WETTERVORHERSAGEBISKAYA"
-  message1 = "RWIVTYRESXBFOGKUHQBAISE"
+  {- test data -}
+  --crib1 = "WETTERVORHERSAGEBISKAYA"
+  --message1 = "RWIVTYRESXBFOGKUHQBAISE"
 
-  type Menu = Int -- the supplied type is not correct; fix it!
+  --cribData :: [(Char,Char)]
+  --cribData = [('W','R'),('E','W'),('T','I'),('T','V'),('E','T'),('R','Y'),('V','R'),('O','E'),('R','S'),('H','X'),('E','B'),('R','F'),('S','O'),('A','G'),('G','K'),('E','U'),('B','H'),('I','Q'),('S','B'),('K','A'),('A','I'),('Y','S'),('A','E')]
+
+  type Menu = [Int] -- the supplied type is not correct; fix it!
   type Crib = [(Char,Char)] -- the supplied type is not correct; fix it!
 
-  --longestMenu :: Crib -> Menu
-  --longestMenu crib = head (longestMenu (lengthList (appeared (length (last (searchEach x crib))) (searchEach x crib))))
+  {- task 2 main -}
+  longestMenu :: Crib -> Menu
+  longestMenu [] = []
+  longestMenu crib = allInOneMenu (multiMenu [0..len] crib)
+    where len = length crib - 1
+  -- > longestMenu crib
 
-  searchPos' :: Int -> Crib -> [Int]
-  searchPos' i crib = elemIndices num (map fst crib)
-    where num = head(drop i (map snd crib))
-  -- > searchPos' 0 (zip crib1 message1)
-  -- [5,8,11]
-
-
-  rmDuPart :: [Int] -> [Int]
-  rmDuPart [] = []
-  rmDuPart (x:xs)
-    | elemIndices x xs /= [] = [head (elemIndices x xs)+1] ++ rmDuPart xs
-    | otherwise = [0] ++ rmDuPart xs
-
-  number :: [Int]
-  number = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
-
-  lastStep :: [([Int],Int)] -> [Int]
-  lastStep [] = []
-  lastStep all@(x:xs)
+  {- get one longest menu of multiple starting position -}
+  allInOneMenu :: [([Int],Int)] -> Menu
+  allInOneMenu [] = []
+  allInOneMenu all@(x:xs)
     | snd x == longest = fst x
-    | otherwise = lastStep xs
+    | otherwise = allInOneMenu xs
       where longest = maximum (map snd all)
-  -- > lastStep (getFirst number)
+  -- > allInOneMenu (multiMenu [0..5] crib)
 
-  getFirst :: [Int] -> [([Int],Int)]
-  getFirst [] = []
-  getFirst (x:xs) = [(longestMenu' (x),length (longestMenu' (x)))] ++ getFirst xs
+  {-  get a pair of menu and its length by different input positions -}
+  multiMenu :: Menu -> Crib -> [([Int],Int)]
+  multiMenu [] _ = []
+  multiMenu (x:xs) crib = (longMenu x crib, length (longMenu x crib)) : multiMenu xs crib
+  -- > multiMenu [0..5] crib
   
-  longestMenu' :: Int -> [Int]
-  longestMenu' x = lengthList (appeared (length (last (searchEach [[x]] (zip crib1 message1)))) (searchEach [[x]] (zip crib1 message1)))
-  -- > longestMenu' (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1))))
+  {- get a longest menu by position input -}
+  longMenu :: Int -> Crib -> Menu
+  longMenu x crib = chooseOne (longSucc (length (last (possMenu [[x]] crib))) (possMenu [[x]] crib))
+  -- > longMenu 0 crib
 
-  lengthList :: [[Int]] -> [Int]
-  lengthList [] = []
-  lengthList (x:xs)
+  {- choose one longest menu or null if not exit -}
+  chooseOne :: [Menu] -> Menu
+  chooseOne [] = []
+  chooseOne (x:xs)
     | (length (elemIndices (last x) x) == 1) = x
-    | otherwise = lengthList xs
-  -- > lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1)))
+    | otherwise = chooseOne xs
+  -- > chooseOne (longSucc (length (last (possMenu [[0]] crib))) (possMenu [[0]] crib))
 
-  searchEach :: [[Int]] -> Crib -> [[Int]]
-  searchEach [] _ = []
-  searchEach all@(x:xs) crib = (eachSearch x crib) ++ searchEach (xs++eachSearch x crib) crib
-  -- > searchEach [[0]] (zip crib1 message1)
+  {- queue for all possible menu by input start position -}
+  possMenu :: [Menu] -> Crib -> [Menu]
+  possMenu [] _ = []
+  possMenu all@(x:xs) crib = (nextMenu x crib) ++ possMenu (xs++nextMenu x crib) crib
+  -- > possMenu [[0]] crib
 
-  eachSearch :: [Int] -> Crib -> [[Int]]
-  eachSearch [] crib = []
-  eachSearch x crib = combine x (searchPos' (last x) crib)
-  -- > eachSearch [0] (zip crib1 message1)
-  -- > eachSearch [0] (zip crib1 message1)
+  {- get nested list of all possible next successors and make it menu -}
+  nextMenu :: Menu -> Crib -> [Menu]
+  nextMenu [] crib = []
+  nextMenu x crib = combine x (succFinder (last x) crib)
+  -- > nextMenu [0] crib
 
-  combine :: [Int] -> [Int] -> [[Int]]
+  {- get successors' position by input current cipher's position -}
+  succFinder :: Int -> Crib -> Menu
+  succFinder i crib = elemIndices num (map fst crib)
+    where num = head(drop i (map snd crib))
+  -- > succFinder 0 crib
+
+  {- combine original menu with its possible successors and return nested list -}
+  combine :: Menu -> Menu -> [Menu]
   combine ori [] = []
   combine ori (x:xs)
     | elem x ori = [] ++ combine ori xs
     | otherwise = [ori++[x]] ++ combine ori xs
   -- > combine [0,2] [5,8,11]
-  -- [[0,2,5],[0,2,8],[0,2,11]]
 
-  appeared :: Int -> [[Int]] -> [[Int]]
-  appeared len [] = []
-  appeared len (x:xs)
-    | len > (length x) = appeared len xs
-    | otherwise = [x] ++ appeared len xs
-  -- > appeared 5 [[0,5],[0,8],[0,11],[0,5,21],[0,8,12],[0,8,18],[0,5,21,12],[0,5,21,18],[0,8,12,7],[0,8,18,16],[0,5,21,12,7],[0,5,21,18,16],[0,8,12,7,1],[0,8,12,7,4],[0,8,12,7,10],[0,8,12,7,15]]
-  -- > appeared 5 [[0,5,4],[0,8],[0,11],[0]]
-
-  -- > searchPos' 0 (zip crib1 message1)
-  -- > snd(searchPos' 1 (zip crib1 message1))
+  {- get longest successors of nested list of menu starting from a specific position -}
+  longSucc :: Int -> [Menu] -> [Menu]
+  longSucc len [] = []
+  longSucc len (x:xs)
+    | len > length x = longSucc len xs
+    | otherwise = x : longSucc len xs
+  -- > longSucc 3 [[0,5,4],[0,8],[0,11],[0]]
+  -- > longSucc 2 [[0,5,4],[0,8],[0,11],[0]]
 
 {- Part 3: Simulating the Bombe -}
   
