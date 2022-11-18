@@ -121,11 +121,11 @@ module Enigma where
   crib1 = "WETTERVORHERSAGEBISKAYA"
   message1 = "RWIVTYRESXBFOGKUHQBAISE"
 
-  type Menu = [Int] -- the supplied type is not correct; fix it!
+  type Menu = Int -- the supplied type is not correct; fix it!
   type Crib = [(Char,Char)] -- the supplied type is not correct; fix it!
 
   --longestMenu :: Crib -> Menu
-  --longestMenu all@(x:xs) = search (snd x) all
+  --longestMenu crib = head (longestMenu (lengthList (appeared (length (last (searchEach x crib))) (searchEach x crib))))
 
   searchPos' :: Int -> Crib -> [Int]
   searchPos' i crib = elemIndices num (map fst crib)
@@ -136,62 +136,39 @@ module Enigma where
 
   rmDuPart :: [Int] -> [Int]
   rmDuPart [] = []
-  rmDuPart (x:xs) 
+  rmDuPart (x:xs)
     | elemIndices x xs /= [] = [head (elemIndices x xs)+1] ++ rmDuPart xs
     | otherwise = [0] ++ rmDuPart xs
 
-  -- > rmDuPart [0,5,21,12,7,4,3,6,8,12,7,1,0,8,12,7,1,0,8,12,7,4,3,6,8,18]
+  number :: [Int]
+  number = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22]
 
-  -- > [maximum [length x | x <- [[0,0,0,0],[1,2,3],[0,0,1,2]], elem 0 x]]
-  -- > maximum [length x | x <- group testData, elem 0 x]
-  --findMax :: [[Int]] -> [[Int],Int]
-  --findMax [] = []
-  --findMax (x:xs) = maximum (length x (group x))
-  -- > findMax (rmDup (longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1))))))
-  
-  --realrealLast :: [([Int],Int)] -> [[Int]] --> [[Int]]
-  --realrealLast real posList = lastStep 
-  -- > realrealLast (lastStep (rmDup (longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1)))))))
-
-  lastStep :: [([Int],Int)] -> [[Int]]
+  lastStep :: [([Int],Int)] -> [Int]
   lastStep [] = []
-  lastStep all@(x:xs) = [rmDuPart (fst x)] ++ lastStep xs
-    where longest = maximum (map snd all)
-  -- > lastStep (rmDup (longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1))))))
+  lastStep all@(x:xs)
+    | snd x == longest = fst x
+    | otherwise = lastStep xs
+      where longest = maximum (map snd all)
+  -- > lastStep (getFirst number)
 
-  rmDup :: [[Int]] -> [([Int],Int)]
-  rmDup [] = []
-  rmDup (x:xs)
-    | elem x xs = rmDup xs
-    | otherwise = [(x, maximum (maxiMenu (rmDuPart x)))] ++ rmDup xs
-  -- > rmDup (longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1)))))
+  getFirst :: [Int] -> [([Int],Int)]
+  getFirst [] = []
+  getFirst (x:xs) = [(longestMenu' (x),length (longestMenu' (x)))] ++ getFirst xs
   
-  maxiMenu :: [Int] -> [Int]
-  maxiMenu [] = []
-  maxiMenu all@(x:xs) = [length (elemIndices x all)] ++ maxiMenu xs
+  longestMenu' :: Int -> [Int]
+  longestMenu' x = lengthList (appeared (length (last (searchEach [[x]] (zip crib1 message1)))) (searchEach [[x]] (zip crib1 message1)))
+  -- > longestMenu' (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1))))
 
-  longestMenu :: [([Int],Int)] -> [[Int]]
-  longestMenu [] = []
-  longestMenu all@(x:xs) = [fst x] ++ longestMenu xs
-  -- > longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1))))
-
-  lengthList :: [[Int]] -> [([Int],Int)]
+  lengthList :: [[Int]] -> [Int]
   lengthList [] = []
   lengthList (x:xs)
-    | (length (elemIndices (last x) x) == 1) = [(x,length x)] ++ lengthList xs
-  --  | length (elemIndices (head x) x) /= 1 = [(take i x,i)] ++ lengthList xs
+    | (length (elemIndices (last x) x) == 1) = x
     | otherwise = lengthList xs
-      --where i = head(tail (elemIndices (head x) x))
-
   -- > lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1)))
 
-  --dupEle :: [Int] -> [Int]
-  --dupEle xs = 
-
   searchEach :: [[Int]] -> Crib -> [[Int]]
-  searchEach all@(x:xs) crib
-    | length (last [x]) == 10 = []
-    | otherwise = (eachSearch x crib) ++ searchEach (xs++eachSearch x crib) crib
+  searchEach [] _ = []
+  searchEach all@(x:xs) crib = (eachSearch x crib) ++ searchEach (xs++eachSearch x crib) crib
   -- > searchEach [[0]] (zip crib1 message1)
 
   eachSearch :: [Int] -> Crib -> [[Int]]
@@ -208,7 +185,6 @@ module Enigma where
   -- > combine [0,2] [5,8,11]
   -- [[0,2,5],[0,2,8],[0,2,11]]
 
-
   appeared :: Int -> [[Int]] -> [[Int]]
   appeared len [] = []
   appeared len (x:xs)
@@ -217,71 +193,8 @@ module Enigma where
   -- > appeared 5 [[0,5],[0,8],[0,11],[0,5,21],[0,8,12],[0,8,18],[0,5,21,12],[0,5,21,18],[0,8,12,7],[0,8,18,16],[0,5,21,12,7],[0,5,21,18,16],[0,8,12,7,1],[0,8,12,7,4],[0,8,12,7,10],[0,8,12,7,15]]
   -- > appeared 5 [[0,5,4],[0,8],[0,11],[0]]
 
-  
-  -- > last (head [[0,5],[0,6]])
-
   -- > searchPos' 0 (zip crib1 message1)
   -- > snd(searchPos' 1 (zip crib1 message1))
-
-  searchPos :: Char -> Crib -> (Char,[Int])
-  searchPos c crib = (c,elemIndices c (map fst crib))
-  -- > searchPos 'R' (zip crib1 message1)
-  -- ('R',[5,8,11])
-
-  --searchRoute :: Crib -> Crib -> [String] -> [String]
-  --searchRoute (x:xs) crib [] = searchNext [x] crib []
-
-  --searchNext :: [(Char,Char)] -> Crib -> [String] -> [String]
-  --searchNext [] _ _ = []
-  --searchNext (plain,cipher) crib [] = 
-
-  --searchNext x crib str = searchNext ((cribPair (last [snd x]) cipherSin) : xs) crib zipStr  -- ++ searchRoute xs crib
-  --  where cipherSin = cipherChar (last[snd x]) crib
-  --        zipStr = zip' [fst x] cipherSin
-  -- > searchNext [('W','R')] (zip crib1 message1)
-  -- > searchNext [('Y','S'),('S','O'),('S','B')] (zip crib1 message1)
-
-  {- input a cipher Char and return the match plain position -}
-
-
-  cribPair :: Char -> [Char] -> [(Char,Char)]
-  cribPair c [] = []
-  cribPair c (x:xs) = [(c,x)] ++ cribPair c xs
-  -- > cribPair 'R' "YSF"
-  -- [('R','Y'),('R','S'),('R','F')]
-
-
-  {- input a cipher Char and return the match plain position -}
-  cipherChar :: Char -> Crib -> [Char]
-  cipherChar c [] = []
-  cipherChar c (x:xs)
-    | c == fst x = snd x:cipherChar c xs
-    | otherwise = cipherChar c xs
-  -- > cipherChar 'R' (zip crib1 message1)
-  -- "YSF"
-
-  {- combine the route -}
-  zip' :: [Char] -> [Char] ->[String]
-  zip' _ [] = []
-  zip' ori (x:xs) = (ori ++ [x]) : zip' ori xs
-  -- > zip' "ABC" "QWERT"
-  -- > zip' "W" (cipherChar 'R' (zip crib1 message1))
-  -- ["WY","WS","WF"]
-
-  getLast :: [String] -> [Char]
-  getLast [] = []
-  getLast (x:xs) = [last x] ++ getLast xs
-
-
-
-  --searchCipher :: Char -> [(Char,Char)] -> Char
-  --searchCipher c (x:xs) = 
-
-  minLength :: String -> String -> Int
-  minLength plain cipher = min (length plain) (length cipher)
-
-
-
 
 {- Part 3: Simulating the Bombe -}
   
