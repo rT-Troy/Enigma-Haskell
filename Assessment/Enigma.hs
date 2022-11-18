@@ -127,60 +127,92 @@ module Enigma where
   --longestMenu :: Crib -> Menu
   --longestMenu all@(x:xs) = search (snd x) all
 
-  combine :: [Int] -> [Int] -> [[Int]]
-  combine ori [] = []
-  combine ori (x:xs) = [ori++[x]] ++ combine ori xs
-  -- > combine [0,2] [5,8,11]
-  -- [[0,2,5],[0,2,8],[0,2,11]]
-
-
   searchPos' :: Int -> Crib -> [Int]
   searchPos' i crib = elemIndices num (map fst crib)
     where num = head(drop i (map snd crib))
   -- > searchPos' 0 (zip crib1 message1)
   -- [5,8,11]
 
-  lengthList :: [[Int]] -> [Int]
+
+  rmDuPart :: [Int] -> [Int]
+  rmDuPart [] = []
+  rmDuPart (x:xs) 
+    | elemIndices x xs /= [] = [head (elemIndices x xs)+1] ++ rmDuPart xs
+    | otherwise = [0] ++ rmDuPart xs
+
+  -- > rmDuPart [0,5,21,12,7,4,3,6,8,12,7,1,0,8,12,7,1,0,8,12,7,4,3,6,8,18]
+
+  -- > [maximum [length x | x <- [[0,0,0,0],[1,2,3],[0,0,1,2]], elem 0 x]]
+  -- > maximum [length x | x <- group testData, elem 0 x]
+  --findMax :: [[Int]] -> [[Int],Int]
+  --findMax [] = []
+  --findMax (x:xs) = maximum (length x (group x))
+  -- > findMax (rmDup (longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1))))))
+  
+  --realrealLast :: [([Int],Int)] -> [[Int]] --> [[Int]]
+  --realrealLast real posList = lastStep 
+  -- > realrealLast (lastStep (rmDup (longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1)))))))
+
+  lastStep :: [([Int],Int)] -> [[Int]]
+  lastStep [] = []
+  lastStep all@(x:xs) = [rmDuPart (fst x)] ++ lastStep xs
+    where longest = maximum (map snd all)
+  -- > lastStep (rmDup (longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1))))))
+
+  rmDup :: [[Int]] -> [([Int],Int)]
+  rmDup [] = []
+  rmDup (x:xs)
+    | elem x xs = rmDup xs
+    | otherwise = [(x, maximum (maxiMenu (rmDuPart x)))] ++ rmDup xs
+  -- > rmDup (longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1)))))
+  
+  maxiMenu :: [Int] -> [Int]
+  maxiMenu [] = []
+  maxiMenu all@(x:xs) = [length (elemIndices x all)] ++ maxiMenu xs
+
+  longestMenu :: [([Int],Int)] -> [[Int]]
+  longestMenu [] = []
+  longestMenu all@(x:xs) = [fst x] ++ longestMenu xs
+  -- > longestMenu (lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1))))
+
+  lengthList :: [[Int]] -> [([Int],Int)]
   lengthList [] = []
   lengthList (x:xs)
-    | length (elemIndices (head x) x) /= 1 = [head(tail (elemIndices (head x) x))] ++ lengthList xs
+    | (length (elemIndices (last x) x) == 1) = [(x,length x)] ++ lengthList xs
+  --  | length (elemIndices (head x) x) /= 1 = [(take i x,i)] ++ lengthList xs
     | otherwise = lengthList xs
-  --lengthList xs = lengthList --elemIndices (maximum lengthList) lengthList
-  --  where lengthList = [head(tail (elemIndices (head x) x)) - head(elemIndices (head x) x)| x<-xs]
-  -- > lengthList (searchEach [[0]] (zip crib1 message1))
-  -- > lengthList [[0,2,1,0],[1,2,3,4,1]]
+      --where i = head(tail (elemIndices (head x) x))
+
+  -- > lengthList (appeared (length (last (searchEach [[0]] (zip crib1 message1)))) (searchEach [[0]] (zip crib1 message1)))
+
+  --dupEle :: [Int] -> [Int]
+  --dupEle xs = 
 
   searchEach :: [[Int]] -> Crib -> [[Int]]
   searchEach all@(x:xs) crib
-    | length (last [x]) == 20 = []
+    | length (last [x]) == 10 = []
     | otherwise = (eachSearch x crib) ++ searchEach (xs++eachSearch x crib) crib
   -- > searchEach [[0]] (zip crib1 message1)
 
   eachSearch :: [Int] -> Crib -> [[Int]]
   eachSearch [] crib = []
   eachSearch x crib = combine x (searchPos' (last x) crib)
-  -- > eachSearch [[0]] (zip crib1 message1)
-  -- > eachSearch [[0,5],[0,8],[0,11]] (zip crib1 message1)
-  -- > eachSearch [[0,8],[0,11],[0,5,21]] (zip crib1 message1)
-  -- > eachSearch [[0,11],[0,5,21],[0,8,12],[0,8,18]] (zip crib1 message1)
-  -- > eachSearch [[0,5,21],[0,8,12],[0,8,18],[]] (zip crib1 message1)
-  -- > eachSearch [[0,5,21],[0,8,12],[0,8,18]] (zip crib1 message1)
-  -- > eachSearch [[0,8,12],[0,8,18],[0,5,21,12],[0,5,21,18]] (zip crib1 message1)
-  -- > eachSearch [[0,8,18],[0,5,21,12],[0,5,21,18],[0,8,12,7]] (zip crib1 message1)
-  -- > eachSearch [[0,5,21,12],[0,5,21,18],[0,8,12,7],[0,8,18,16]] (zip crib1 message1)
-  -- > eachSearch [[0,5,21,18],[0,8,12,7],[0,8,18,16],[0,5,21,12,7]] (zip crib1 message1)
-  -- > eachSearch [[0,8,12,7],[0,8,18,16],[0,5,21,12,7],[0,5,21,18,16]] (zip crib1 message1)
-  -- > eachSearch [[0,8,18,16],[0,5,21,12,7],[0,5,21,18,16],[0,8,12,7,1],[0,8,12,7,4],[0,8,12,7,10],[0,8,12,7,15]] (zip crib1 message1)
-  
+  -- > eachSearch [0] (zip crib1 message1)
+  -- > eachSearch [0] (zip crib1 message1)
 
-  --verify :: [[Int]] -> [[Int]]
-  --verify (x:xs)
-  --  | [last x] == 
+  combine :: [Int] -> [Int] -> [[Int]]
+  combine ori [] = []
+  combine ori (x:xs)
+    | elem x ori = [] ++ combine ori xs
+    | otherwise = [ori++[x]] ++ combine ori xs
+  -- > combine [0,2] [5,8,11]
+  -- [[0,2,5],[0,2,8],[0,2,11]]
+
 
   appeared :: Int -> [[Int]] -> [[Int]]
   appeared len [] = []
   appeared len (x:xs)
-    | len > (length x + 1) = appeared len xs
+    | len > (length x) = appeared len xs
     | otherwise = [x] ++ appeared len xs
   -- > appeared 5 [[0,5],[0,8],[0,11],[0,5,21],[0,8,12],[0,8,18],[0,5,21,12],[0,5,21,18],[0,8,12,7],[0,8,18,16],[0,5,21,12,7],[0,5,21,18,16],[0,8,12,7,1],[0,8,12,7,4],[0,8,12,7,10],[0,8,12,7,15]]
   -- > appeared 5 [[0,5,4],[0,8],[0,11],[0]]
