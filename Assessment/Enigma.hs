@@ -19,32 +19,27 @@ module Enigma where
   data Enigma = SimpleEnigma Rotor Rotor Rotor Reflector Offsets
                 | SteckeredEnigma Rotor Rotor Rotor Reflector Offsets Stecker
 
-  {- normalize the String first -}
   encodeMessage :: String -> Enigma -> String
   encodeMessage xs (SimpleEnigma rotorR rotorM rotorL reflectorB offsets) =
     encodeMessage' (normalize xs) (SimpleEnigma rotorR rotorM rotorL reflectorB (moveMatch offsets rotorR rotorM rotorL))
 
   encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets steckers) =
     encodeMessage' (normalize xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (moveMatch offsets rotorR rotorM rotorL) steckers)
-  -- -- > encodeMessage "%AAAAAAAAA" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > encodeMessage "Here is a test input string." (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > encodeMessage "Here is a test input string." (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z'),('I','X')])
-
   -- > encodeMessage "AAAAAAAAAA" (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z')])
+  -- > encodeMessage "ALICE" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > encodeMessage "NIQVD" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > "NIQVD" -> "ALICE"
-  -- > "AA" -> "NE"
 
-  {- the encode main function -}
   encodeMessage' :: String -> Enigma -> String
   encodeMessage' [] _ = []
   encodeMessage' (x:xs) (SimpleEnigma rotorR rotorM rotorL reflectorB (l,m,r)) = 
     encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r : encodeMessage' xs (SimpleEnigma (head nextRotorList) (head(tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL))
       where nextRotorList = cur3Rotor (l,m,r) (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
-  
   encodeMessage' (x:xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (l,m,r) steckers) = 
    steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r) steckers : encodeMessage' xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL) steckers)
-     where nextRotorList = cur3Rotor (l,m,r) (l,m,r) rotorR rotorM rotorL
+     where nextRotorList = cur3Rotor (l,m,r) (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
 
   {- makesure only uppercase letter would be inputed -}
   normalize :: String -> String
@@ -65,7 +60,7 @@ module Enigma where
   {- encode from reflector -> LR -> MR -> RR -}
   encode' :: Char -> Rotor -> Int -> Char
   encode' c rotor pos = int2let (head(elemIndices input (fst rotor))) 
-    where input = (head(drop (alphaPos c) (drop pos ['A'..'Z'] ++ take pos ['A'..'Z'])))
+    where input = (drop pos ['A' .. 'Z'] ++ take pos ['A' .. 'Z']) !! max 0 (alphaPos c)
   -- > encode' 'I' ("BDFHJLCPRTXVZNYEIWGAKMUSQO",22::Int) 0
   -- > encode' 'Q' ("AJDKSIRUXBLHWTMCQGZNPYFVOE",5::Int) 0
   -- > encode' 'Q' ("MFLGDQVZNTOWYHXUSPAIBRCJEK",17::Int) 2
@@ -76,16 +71,16 @@ module Enigma where
     | snd rotorM == y && snd rotorR == z = ((x+1)`rem`26,(y+1)`rem`26,(z+1)`rem`26)
     | snd rotorM /= y && snd rotorR == z = (x`rem`26,(y+1)`rem`26,(z+1)`rem`26)
     | otherwise = (x`rem`26,y`rem`26,(z+1)`rem`26)
-  -- > moveMatch (0,0,0) rotor1 rotor2 rotor3
+  -- > moveMatch (0,0,25) rotor1 rotor2 rotor3
   -- > moveMatch (0,0,17) rotor1 rotor2 rotor3
   -- > moveMatch (0,25,17) rotor1 rotor2 rotor3
 
   {- the rotor state changed and stored as list -}
   cur3Rotor :: (Int,Int,Int) -> (Int,Int,Int) -> Rotor -> Rotor -> Rotor -> [Rotor]
   cur3Rotor (ox,oy,oz) (x,y,z) rotorR rotorM rotorL = 
-    [(drop (z-oz) (fst rotorR) ++ take (z-oz) (fst rotorR), snd rotorR),
-     (drop (y-oy) (fst rotorM) ++ take (y-oy) (fst rotorM), snd rotorM),
-     (drop (x-ox) (fst rotorL) ++ take (x-ox) (fst rotorL), snd rotorL)]
+    [(drop (if z-oz == (-25) then 1 else z-oz) (fst rotorR) ++ take (if z-oz == (-25) then 1 else z-oz) (fst rotorR), snd rotorR),
+     (drop (if y-oy == (-25) then 1 else y-oy) (fst rotorM) ++ take (if y-oy == (-25) then 1 else y-oy) (fst rotorM), snd rotorM),
+     (drop (if x-ox == (-25) then 1 else x-ox) (fst rotorL) ++ take (if x-ox == (-25) then 1 else x-ox) (fst rotorL), snd rotorL)]
   -- > cur3Rotor (0,0,25) (0,0,0) rotor1 rotor2 rotor3
 
   reflector :: Char -> Reflector -> Char
@@ -96,7 +91,6 @@ module Enigma where
   -- > reflector 'A' reflectorB
   -- > reflector 'P' reflectorB
 
-  {- if not found in stecker, equals itself -}
   steckerMatch :: Char -> Stecker -> Char
   steckerMatch c (x:xs)
     | fst x == c = snd x
@@ -149,14 +143,14 @@ module Enigma where
   chooseOne :: [Menu] -> Menu
   chooseOne [] = []
   chooseOne (x:xs)
-    | (length (elemIndices (last x) x) == 1) = x
+    | length (elemIndices (last x) x) == 1 = x
     | otherwise = chooseOne xs
   -- > chooseOne (longSucc (length (last (possMenu [[0]] crib))) (possMenu [[0]] crib))
 
   {- queue for all possible menu by input start position -}
   possMenu :: [Menu] -> Crib -> [Menu]
   possMenu [] _ = []
-  possMenu all@(x:xs) crib = (nextMenu x crib) ++ possMenu (xs++nextMenu x crib) crib
+  possMenu all@(x:xs) crib = nextMenu x crib ++ possMenu (xs++nextMenu x crib) crib
   -- > possMenu [[0]] crib
 
   {- get nested list of all possible next successors and make it menu -}
@@ -168,15 +162,15 @@ module Enigma where
   {- get successors' position by input current cipher's position -}
   succFinder :: Int -> Crib -> Menu
   succFinder i crib = elemIndices num (map fst crib)
-    where num = head(drop i (map snd crib))
+    where num = map snd crib !! max 0 i
   -- > succFinder 0 crib
 
   {- combine original menu with its possible successors and return nested list -}
   combine :: Menu -> Menu -> [Menu]
   combine ori [] = []
   combine ori (x:xs)
-    | elem x ori = [] ++ combine ori xs
-    | otherwise = [ori++[x]] ++ combine ori xs
+    | x `elem` ori = combine ori xs
+    | otherwise = (ori ++ [x]) : combine ori xs
   -- > combine [0,2] [5,8,11]
 
   {- get longest successors of nested list of menu starting from a specific position -}
