@@ -7,6 +7,7 @@ module Enigma where
   import Data.Char  -- to use functions on characters
   import Data.Maybe -- breakEnigma uses Maybe type
   import Data.List
+  import GHC.IO.Exception (stackOverflow)
   -- add extra imports if needed, but only standard library functions!
 
 {- Part 1: Simulation of the Enigma -}
@@ -58,19 +59,17 @@ module Enigma where
 
   {- encode from RR -> MR -> LR -> reflector -}
   encode :: Char -> Rotor -> Int -> Char
-  encode c rotor pos 
-    | index > 0 = (int2let index)
-    | index < 0 = int2let (24-index)
-    | otherwise = 'A'
-      where index = (alphaPos (head(drop (alphaPos c) (fst rotor)))-pos)
-  -- > encode 'G' ("FLGDQVZNTOWYHXUSPAIBRCJEKM",17::Int) 23
+  encode c rotor pos =  int2let (head (elemIndices (fst rotor !! max 0 (alphaPos c)) (drop pos ['A'..'Z'] ++ take pos ['A'..'Z'])))
+  -- > encode 'A' ("KMFLGDQVZNTOWYHXUSPAIBRCJE",17::Int) 1
+  -- > encode 'A' ("MFLGDQVZNTOWYHXUSPAIBRCJEK",17::Int) 2
 
   {- encode from reflector -> LR -> MR -> RR -}
   encode' :: Char -> Rotor -> Int -> Char
-  encode' c rotor pos = int2let index
-      where index = (head (elemIndices c (fst rotor))+pos)
-  -- > encode' 'E' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int) 0
-  -- > encode' 'J' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int) 0
+  encode' c rotor pos = int2let (head(elemIndices input (fst rotor))) 
+    where input = (head(drop (alphaPos c) (drop pos ['A'..'Z'] ++ take pos ['A'..'Z'])))
+  -- > encode' 'K' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int) 0
+  -- > encode' 'J' ("KMFLGDQVZNTOWYHXUSPAIBRCJE",17::Int) 1 
+
   {- offsets of next step according to knock-on position -}
   moveMatch :: (Int,Int,Int) -> Rotor -> Rotor -> Rotor -> (Int,Int,Int)
   moveMatch (x,y,z) rotorR rotorM rotorL
