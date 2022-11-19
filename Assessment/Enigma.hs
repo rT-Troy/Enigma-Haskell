@@ -32,7 +32,6 @@ module Enigma where
 
   -- > encodeMessage "AAAAAAAAAA" (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z')])
   -- > encodeMessage "NIQVD" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
-  --encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets stecker) = "null"
   -- > "NIQVD" -> "ALICE"
   -- > "AA" -> "NE"
 
@@ -41,11 +40,11 @@ module Enigma where
   encodeMessage' [] _ = []
   encodeMessage' (x:xs) (SimpleEnigma rotorR rotorM rotorL reflectorB (l,m,r)) = 
     encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r : encodeMessage' xs (SimpleEnigma (head nextRotorList) (head(tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL))
-      where nextRotorList = cur3Rotor (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
+      where nextRotorList = cur3Rotor (l,m,r) (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
   
   encodeMessage' (x:xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (l,m,r) steckers) = 
    steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r) steckers : encodeMessage' xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL) steckers)
-     where nextRotorList = cur3Rotor (l,m,r) rotorR rotorM rotorL
+     where nextRotorList = cur3Rotor (l,m,r) (l,m,r) rotorR rotorM rotorL
 
   {- makesure only uppercase letter would be inputed -}
   normalize :: String -> String
@@ -82,13 +81,12 @@ module Enigma where
   -- > moveMatch (0,25,17) rotor1 rotor2 rotor3
 
   {- the rotor state changed and stored as list -}
-  cur3Rotor :: (Int,Int,Int) -> Rotor -> Rotor -> Rotor -> [Rotor]
-  cur3Rotor (x,y,z) rotorR rotorM rotorL =
-    [(drop z (fst rotorR) ++ take z (fst rotorR), snd rotorR),
-     (drop y (fst rotorM) ++ take y (fst rotorM), snd rotorM),
-     (drop x (fst rotorL) ++ take x (fst rotorL), snd rotorL)]
-  -- > cur3Rotor (0,0,0) rotor1 rotor2 rotor3
-  -- > cur3Rotor (2,1,1) rotor1 rotor2 rotor3
+  cur3Rotor :: (Int,Int,Int) -> (Int,Int,Int) -> Rotor -> Rotor -> Rotor -> [Rotor]
+  cur3Rotor (ox,oy,oz) (x,y,z) rotorR rotorM rotorL = 
+    [(drop (z-oz) (fst rotorR) ++ take (z-oz) (fst rotorR), snd rotorR),
+     (drop (y-oy) (fst rotorM) ++ take (y-oy) (fst rotorM), snd rotorM),
+     (drop (x-ox) (fst rotorL) ++ take (x-ox) (fst rotorL), snd rotorL)]
+  -- > cur3Rotor (0,0,25) (0,0,0) rotor1 rotor2 rotor3
 
   reflector :: Char -> Reflector -> Char
   reflector c (x:xs) 
