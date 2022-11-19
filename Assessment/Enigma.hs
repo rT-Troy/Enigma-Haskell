@@ -7,7 +7,6 @@ module Enigma where
   import Data.Char  -- to use functions on characters
   import Data.Maybe -- breakEnigma uses Maybe type
   import Data.List
-  import GHC.IO.Exception (stackOverflow)
   -- add extra imports if needed, but only standard library functions!
 
 {- Part 1: Simulation of the Enigma -}
@@ -19,7 +18,7 @@ module Enigma where
   
   data Enigma = SimpleEnigma Rotor Rotor Rotor Reflector Offsets
                 | SteckeredEnigma Rotor Rotor Rotor Reflector Offsets Stecker
-  
+
   {- normalize the String first -}
   encodeMessage :: String -> Enigma -> String
   encodeMessage xs (SimpleEnigma rotorR rotorM rotorL reflectorB offsets) =
@@ -32,7 +31,7 @@ module Enigma where
   -- > encodeMessage "Here is a test input string." (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z'),('I','X')])
 
   -- > encodeMessage "AAAAAAAAAA" (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z')])
-  -- > encodeMessage "AAAAAAAAAA" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
+  -- > encodeMessage "NIQVD" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   --encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets stecker) = "null"
   -- > "NIQVD" -> "ALICE"
   -- > "AA" -> "NE"
@@ -41,12 +40,12 @@ module Enigma where
   encodeMessage' :: String -> Enigma -> String
   encodeMessage' [] _ = []
   encodeMessage' (x:xs) (SimpleEnigma rotorR rotorM rotorL reflectorB (l,m,r)) = 
-    encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r : encodeMessage xs (SimpleEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL))
+    encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r : encodeMessage' xs (SimpleEnigma (head nextRotorList) (head(tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL))
       where nextRotorList = cur3Rotor (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
   
   encodeMessage' (x:xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (l,m,r) steckers) = 
-   steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r) steckers : encodeMessage xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL) steckers)
-     where nextRotorList = cur3Rotor (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
+   steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r) steckers : encodeMessage' xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL) steckers)
+     where nextRotorList = cur3Rotor (l,m,r) rotorR rotorM rotorL
 
   {- makesure only uppercase letter would be inputed -}
   normalize :: String -> String
@@ -60,15 +59,17 @@ module Enigma where
   {- encode from RR -> MR -> LR -> reflector -}
   encode :: Char -> Rotor -> Int -> Char
   encode c rotor pos =  int2let (head (elemIndices (fst rotor !! max 0 (alphaPos c)) (drop pos ['A'..'Z'] ++ take pos ['A'..'Z'])))
-  -- > encode 'A' ("KMFLGDQVZNTOWYHXUSPAIBRCJE",17::Int) 1
-  -- > encode 'A' ("MFLGDQVZNTOWYHXUSPAIBRCJEK",17::Int) 2
+  -- > encode 'I' ("MFLGDQVZNTOWYHXUSPAIBRCJEK",17::Int) 2
+  -- > encode 'L' ("AJDKSIRUXBLHWTMCQGZNPYFVOE",5::Int) 0
+  -- > encode 'H' ("BDFHJLCPRTXVZNYEIWGAKMUSQO",22::Int) 0
 
   {- encode from reflector -> LR -> MR -> RR -}
   encode' :: Char -> Rotor -> Int -> Char
   encode' c rotor pos = int2let (head(elemIndices input (fst rotor))) 
     where input = (head(drop (alphaPos c) (drop pos ['A'..'Z'] ++ take pos ['A'..'Z'])))
-  -- > encode' 'K' ("EKMFLGDQVZNTOWYHXUSPAIBRCJ",17::Int) 0
-  -- > encode' 'J' ("KMFLGDQVZNTOWYHXUSPAIBRCJE",17::Int) 1 
+  -- > encode' 'I' ("BDFHJLCPRTXVZNYEIWGAKMUSQO",22::Int) 0
+  -- > encode' 'Q' ("AJDKSIRUXBLHWTMCQGZNPYFVOE",5::Int) 0
+  -- > encode' 'Q' ("MFLGDQVZNTOWYHXUSPAIBRCJEK",17::Int) 2
 
   {- offsets of next step according to knock-on position -}
   moveMatch :: (Int,Int,Int) -> Rotor -> Rotor -> Rotor -> (Int,Int,Int)
@@ -76,7 +77,7 @@ module Enigma where
     | snd rotorM == y && snd rotorR == z = ((x+1)`rem`26,(y+1)`rem`26,(z+1)`rem`26)
     | snd rotorM /= y && snd rotorR == z = (x`rem`26,(y+1)`rem`26,(z+1)`rem`26)
     | otherwise = (x`rem`26,y`rem`26,(z+1)`rem`26)
-  -- > moveMatch (0,0,25) rotor1 rotor2 rotor3
+  -- > moveMatch (0,0,0) rotor1 rotor2 rotor3
   -- > moveMatch (0,0,17) rotor1 rotor2 rotor3
   -- > moveMatch (0,25,17) rotor1 rotor2 rotor3
 
@@ -86,7 +87,7 @@ module Enigma where
     [(drop z (fst rotorR) ++ take z (fst rotorR), snd rotorR),
      (drop y (fst rotorM) ++ take y (fst rotorM), snd rotorM),
      (drop x (fst rotorL) ++ take x (fst rotorL), snd rotorL)]
-  -- > cur3Rotor (2,1,0) rotor1 rotor2 rotor3
+  -- > cur3Rotor (0,0,0) rotor1 rotor2 rotor3
   -- > cur3Rotor (2,1,1) rotor1 rotor2 rotor3
 
   reflector :: Char -> Reflector -> Char
@@ -94,7 +95,8 @@ module Enigma where
     | fst x == c = snd x
     | snd x == c = fst x
     | otherwise = reflector c xs
-  -- > reflector 'T' reflectorB
+  -- > reflector 'A' reflectorB
+  -- > reflector 'P' reflectorB
 
   {- if not found in stecker, equals itself -}
   steckerMatch :: Char -> Stecker -> Char
