@@ -26,7 +26,8 @@ module Enigma where
       where startRotor = cur3Rotor (0,0,0) (moveMatch offsets rotorR rotorM rotorL) rotorR rotorM rotorL
 
   encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets steckers) =
-    encodeMessage' (normalize xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (moveMatch offsets rotorR rotorM rotorL) steckers)
+    encodeMessage' (normalize xs) (SteckeredEnigma (head startRotor) (startRotor!!1) (last startRotor) reflectorB (moveMatch offsets rotorR rotorM rotorL) steckers)
+      where startRotor = cur3Rotor (0,0,0) (moveMatch offsets rotorR rotorM rotorL) rotorR rotorM rotorL
   -- > encodeMessage "Here is a test input string." (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > encodeMessage "Here is a test input string." (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z'),('I','X')])
   -- > encodeMessage "ALICE" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
@@ -37,10 +38,10 @@ module Enigma where
   encodeMessage' :: String -> Enigma -> String
   encodeMessage' [] _ = []
   encodeMessage' (x:xs) (SimpleEnigma rotorR rotorM rotorL reflectorB (l,m,r)) = 
-    encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r : encodeMessage' xs (SimpleEnigma (head nextRotorList) (head(tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL))
+    encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r : encodeMessage' xs (SimpleEnigma (head nextRotorList) (nextRotorList!!1) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL))
       where nextRotorList = cur3Rotor (l,m,r) (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
   encodeMessage' (x:xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (l,m,r) steckers) = 
-   steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode (steckerMatch x steckers) rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r) steckers : encodeMessage' xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL) steckers)
+   steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode (steckerMatch x steckers) rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r) steckers : encodeMessage' xs (SteckeredEnigma (head nextRotorList) (nextRotorList!!1) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL) steckers)
      where nextRotorList = cur3Rotor (l,m,r) (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
   -- > encodeMessage' "ALICE" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,0))
   -- > encodeMessage' "NIQVD" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,0))
@@ -110,14 +111,11 @@ module Enigma where
 {- Part 2: Finding the Longest Menu -}
 
   {- test data -}
-  --crib1 = "WETTERVORHERSAGEBISKAYA"
-  --message1 = "RWIVTYRESXBFOGKUHQBAISE"
-
   cribData :: [(Char,Char)]
   cribData = [('W','R'),('E','W'),('T','I'),('T','V'),('E','T'),('R','Y'),('V','R'),('O','E'),('R','S'),('H','X'),('E','B'),('R','F'),('S','O'),('A','G'),('G','K'),('E','U'),('B','H'),('I','Q'),('S','B'),('K','A'),('A','I'),('Y','S'),('A','E')]
 
   type Menu = [Int] -- the supplied type is not correct; fix it!
-  type Crib = [(Char,Char)] -- the supplied type is not correct; fix it!
+  type Crib = [(Char,Char)]
 
   {- task 2 main -}
   longestMenu :: Crib -> Menu
@@ -127,24 +125,27 @@ module Enigma where
   -- > longestMenu cribData
 
   {- get one longest menu of multiple starting position -}
-  allInOneMenu :: [([Int],Int)] -> Menu
+  allInOneMenu :: [(Menu,Int)] -> Menu
   allInOneMenu [] = []
   allInOneMenu all@(x:xs)
     | snd x == longest = fst x
     | otherwise = allInOneMenu xs
       where longest = maximum (map snd all)
-  -- > allInOneMenu (multiMenu [0..5] crib)
+  -- > allInOneMenu (multiMenu [0..5] cribData)
+  -- > allInOneMenu (multiMenu [9] cribData)
 
   {-  get a pair of menu and its length by different input positions -}
-  multiMenu :: Menu -> Crib -> [([Int],Int)]
+  multiMenu :: [Int] -> Crib -> [(Menu,Int)]
   multiMenu [] _ = []
-  multiMenu (x:xs) crib = (longMenu x crib, length (longMenu x crib)) : multiMenu xs crib
-  -- > multiMenu [0..5] crib
+  multiMenu (x:xs) crib = (longMenu, length longMenu) : multiMenu xs crib
+    where longMenu = chooseOne (longSucc (length (last (possMenu [[x]] crib))) (possMenu [[x]] crib))
+  -- > multiMenu [0..5] cribData
+  -- > multiMenu [9] cribData
   
   {- get a longest menu by position input -}
-  longMenu :: Int -> Crib -> Menu
-  longMenu x crib = chooseOne (longSucc (length (last (possMenu [[x]] crib))) (possMenu [[x]] crib))
-  -- > longMenu 0 crib
+  --longMenu :: Int -> Crib -> Menu
+  --longMenu x crib = chooseOne (longSucc (length (last (possMenu [[x]] crib))) (possMenu [[x]] crib))
+  -- > longMenu 0 cribData
 
   {- choose one longest menu or null if not exit -}
   chooseOne :: [Menu] -> Menu
@@ -152,28 +153,31 @@ module Enigma where
   chooseOne (x:xs)
     | length (elemIndices (last x) x) == 1 = x
     | otherwise = chooseOne xs
-  -- > chooseOne (longSucc (length (last (possMenu [[0]] crib))) (possMenu [[0]] crib))
+  -- > chooseOne (longSucc (length (last (possMenu [[0]] cribData))) (possMenu [[0]] cribData))
 
   {- queue for all possible menu by input start position -}
-  possMenu :: [Menu] -> Crib -> [Menu]
+  possMenu :: [[Int]] -> Crib -> [Menu]
   possMenu [] _ = []
   possMenu all@(x:xs) crib = nextMenu x crib ++ possMenu (xs++nextMenu x crib) crib
-  -- > possMenu [[0]] crib
+  -- > possMenu [[0]] cribData
+  -- > possMenu [[9]] cribData
 
   {- get nested list of all possible next successors and make it menu -}
-  nextMenu :: Menu -> Crib -> [Menu]
+  nextMenu :: [Int] -> Crib -> [Menu]
   nextMenu [] crib = []
   nextMenu x crib = combine x (succFinder (last x) crib)
-  -- > nextMenu [0] crib
+  -- > nextMenu [0] cribData
+  -- > nextMenu [9] cribData
 
   {- get successors' position by input current cipher's position -}
-  succFinder :: Int -> Crib -> Menu
+  succFinder :: Int -> Crib -> [Int]
   succFinder i crib = elemIndices num (map fst crib)
     where num = map snd crib !! max 0 i
-  -- > succFinder 0 crib
+  -- > succFinder 0 cribData
+  -- > succFinder 9 cribData
 
   {- combine original menu with its possible successors and return nested list -}
-  combine :: Menu -> Menu -> [Menu]
+  combine :: Menu -> [Int] -> [Menu]
   combine ori [] = []
   combine ori (x:xs)
     | x `elem` ori = combine ori xs
