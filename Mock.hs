@@ -52,9 +52,8 @@ fn6 [] _ = []  -- missing base case for '_'
 fn6 (x:xs) (y:ys) = (x + y) : fn xs ys
 
 
---greeting :: IO -- return type IO is incorrect! should be 'IO Int' or maybe something else.  
+greeting :: IO()
 greeting = do
                   putStrLn "Greetings! What is your name?"
                   inpStr <- getLine
                   putStrLn (inpStr ++ "! Nice name :) I'm sending back its length...")
-                  return (length inpStr) 
