@@ -22,7 +22,8 @@ module Enigma where
 
   encodeMessage :: String -> Enigma -> String
   encodeMessage xs (SimpleEnigma rotorR rotorM rotorL reflectorB offsets) =
-    encodeMessage' (normalize xs) (SimpleEnigma rotorR rotorM rotorL reflectorB (moveMatch offsets rotorR rotorM rotorL))
+    encodeMessage' (normalize xs) (SimpleEnigma (head startRotor) (startRotor!!1) (last startRotor) reflectorB (moveMatch offsets rotorR rotorM rotorL))
+      where startRotor = cur3Rotor (0,0,0) (moveMatch offsets rotorR rotorM rotorL) rotorR rotorM rotorL
 
   encodeMessage xs (SteckeredEnigma rotorR rotorM rotorL reflectorB offsets steckers) =
     encodeMessage' (normalize xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (moveMatch offsets rotorR rotorM rotorL) steckers)
@@ -38,7 +39,7 @@ module Enigma where
     encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r : encodeMessage' xs (SimpleEnigma (head nextRotorList) (head(tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL))
       where nextRotorList = cur3Rotor (l,m,r) (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
   encodeMessage' (x:xs) (SteckeredEnigma rotorR rotorM rotorL reflectorB (l,m,r) steckers) = 
-   steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode x rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r) steckers : encodeMessage' xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL) steckers)
+   steckerMatch (encode'(encode' (encode' (reflector (encode (encode (encode (steckerMatch x steckers) rotorR r) rotorM m) rotorL l) reflectorB) rotorL l) rotorM m) rotorR r) steckers : encodeMessage' xs (SteckeredEnigma (head nextRotorList) (head (tail nextRotorList)) (last nextRotorList) reflectorB (moveMatch (l,m,r) rotorR rotorM rotorL) steckers)
      where nextRotorList = cur3Rotor (l,m,r) (moveMatch (l,m,r) rotorR rotorM rotorL) rotorR rotorM rotorL
   -- > encodeMessage' "ALICE" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,0))
   -- > encodeMessage' "NIQVD" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,0))
@@ -111,8 +112,8 @@ module Enigma where
   --crib1 = "WETTERVORHERSAGEBISKAYA"
   --message1 = "RWIVTYRESXBFOGKUHQBAISE"
 
-  --cribData :: [(Char,Char)]
-  --cribData = [('W','R'),('E','W'),('T','I'),('T','V'),('E','T'),('R','Y'),('V','R'),('O','E'),('R','S'),('H','X'),('E','B'),('R','F'),('S','O'),('A','G'),('G','K'),('E','U'),('B','H'),('I','Q'),('S','B'),('K','A'),('A','I'),('Y','S'),('A','E')]
+  cribData :: [(Char,Char)]
+  cribData = [('W','R'),('E','W'),('T','I'),('T','V'),('E','T'),('R','Y'),('V','R'),('O','E'),('R','S'),('H','X'),('E','B'),('R','F'),('S','O'),('A','G'),('G','K'),('E','U'),('B','H'),('I','Q'),('S','B'),('K','A'),('A','I'),('Y','S'),('A','E')]
 
   type Menu = [Int] -- the supplied type is not correct; fix it!
   type Crib = [(Char,Char)] -- the supplied type is not correct; fix it!
@@ -122,7 +123,7 @@ module Enigma where
   longestMenu [] = []
   longestMenu crib = allInOneMenu (multiMenu [0..len] crib)
     where len = length crib - 1
-  -- > longestMenu crib
+  -- > longestMenu cribData
 
   {- get one longest menu of multiple starting position -}
   allInOneMenu :: [([Int],Int)] -> Menu
