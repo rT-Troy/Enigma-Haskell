@@ -30,6 +30,7 @@ module Enigma where
   -- > encodeMessage "Here is a test input string." (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > encodeMessage "Here is a test input string." (SteckeredEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25) [('F','T'),('D','U'),('V','A'),('K','W'),('H','Z'),('I','X')])
   -- > encodeMessage "ALICE" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
+  -- > encodeMessage "ALICE" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,1,1))
   -- > encodeMessage "NIQVD" (SimpleEnigma rotor1 rotor2 rotor3 reflectorB (0,0,25))
   -- > "NIQVD" -> "ALICE"
 
