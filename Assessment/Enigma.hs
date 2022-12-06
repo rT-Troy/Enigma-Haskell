@@ -131,6 +131,14 @@ module Enigma where
   multiMenu (x:xs) crib = (longMenu, length longMenu) : multiMenu xs crib
     where longMenu = chooseOne (longSucc (length (last (possMenu [[x]] crib))) (possMenu [[x]] crib))
 
+
+  {- get longest successors of nested list of menu starting from a specific position -}
+  longSucc :: Int -> [Menu] -> [Menu]
+  longSucc len [] = []
+  longSucc len (x:xs)
+    | len > length x = longSucc len xs
+    | otherwise = x : longSucc len xs
+  
   
   {- choose one longest menu or null if not exit -}
   chooseOne :: [Menu] -> Menu
@@ -165,13 +173,6 @@ module Enigma where
     | x `elem` ori = combine ori xs
     | otherwise = (ori ++ [x]) : combine ori xs
 
-
-  {- get longest successors of nested list of menu starting from a specific position -}
-  longSucc :: Int -> [Menu] -> [Menu]
-  longSucc len [] = []
-  longSucc len (x:xs)
-    | len > length x = longSucc len xs
-    | otherwise = x : longSucc len xs
 
 
 {- Part 3: Simulating the Bombe -}
